@@ -1,17 +1,21 @@
-'use strict';
+"use strict";
 
 // ── Shim pentru localStorage (nu există în Node.js) ───────────────────────
 const store = {};
 global.localStorage = {
-  getItem:    key       => store[key] ?? null,
-  setItem:    (key, v)  => { store[key] = v; },
-  removeItem: key       => { delete store[key]; }
+  getItem: (key) => store[key] ?? null,
+  setItem: (key, v) => {
+    store[key] = v;
+  },
+  removeItem: (key) => {
+    delete store[key];
+  },
 };
 
 // Curăță state-ul între teste
-global.localStorage.setItem('isa-todos', '[]');
+global.localStorage.setItem("isa-todos", "[]");
 
-const { TodoApp } = require('../app/app.js');
+const { TodoApp } = require("../app/app.js");
 
 // ── Mini test runner ───────────────────────────────────────────────────────
 let passed = 0;
@@ -31,141 +35,203 @@ function test(name, fn) {
 }
 
 function assert(condition, msg) {
-  if (!condition) throw new Error(msg || 'Assertion failed');
+  if (!condition) throw new Error(msg || "Assertion failed");
 }
 
 function assertEqual(a, b, msg) {
-  if (a !== b) throw new Error(msg || `Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
+  if (a !== b)
+    throw new Error(
+      msg || `Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`,
+    );
 }
 
 // ── Teste ──────────────────────────────────────────────────────────────────
-console.log('\nTODO Manager — Test Suite\n');
+console.log("\nTODO Manager — Test Suite\n");
 
 // 1. addTodo
-console.log('addTodo()');
+console.log("addTodo()");
 
-test('adaugă o sarcină cu text valid', () => {
-  const todo = TodoApp.addTodo('Primul task');
-  assert(todo !== null, 'Ar trebui să returneze un obiect');
-  assertEqual(todo.text, 'Primul task');
+test("adaugă o sarcină cu text valid", () => {
+  const todo = TodoApp.addTodo("Primul task");
+  assert(todo !== null, "Ar trebui să returneze un obiect");
+  assertEqual(todo.text, "Primul task");
   assertEqual(todo.completed, false);
   assertEqual(TodoApp.getFiltered().length, 1);
 });
 
-test('ignoră textul gol', () => {
-  const result = TodoApp.addTodo('   ');
-  assertEqual(result, null, 'Textul gol nu trebuie acceptat');
+test("ignoră textul gol", () => {
+  const result = TodoApp.addTodo("   ");
+  assertEqual(result, null, "Textul gol nu trebuie acceptat");
   assertEqual(TodoApp.getFiltered().length, 0);
 });
 
-test('trimează spațiile din text', () => {
-  const todo = TodoApp.addTodo('  sarcină cu spații  ');
-  assertEqual(todo.text, 'sarcină cu spații');
+test("trimează spațiile din text", () => {
+  const todo = TodoApp.addTodo("  sarcină cu spații  ");
+  assertEqual(todo.text, "sarcină cu spații");
 });
 
-test('fiecare sarcină primește un id unic', () => {
-  const a = TodoApp.addTodo('Task A');
-  const b = TodoApp.addTodo('Task B');
-  assert(a.id !== b.id, 'ID-urile trebuie să fie distincte');
+test("fiecare sarcină primește un id unic", () => {
+  const a = TodoApp.addTodo("Task A");
+  const b = TodoApp.addTodo("Task B");
+  assert(a.id !== b.id, "ID-urile trebuie să fie distincte");
 });
 
 // 2. toggleTodo
-console.log('\ntoggleTodo()');
+console.log("\ntoggleTodo()");
 
-test('marchează o sarcină ca finalizată', () => {
-  const todo = TodoApp.addTodo('Test toggle');
+test("marchează o sarcină ca finalizată", () => {
+  const todo = TodoApp.addTodo("Test toggle");
   TodoApp.toggleTodo(todo.id);
   const items = TodoApp.getFiltered();
   assertEqual(items[0].completed, true);
 });
 
-test('demarchează o sarcină finalizată', () => {
-  const todo = TodoApp.addTodo('Test toggle dublu');
+test("demarchează o sarcină finalizată", () => {
+  const todo = TodoApp.addTodo("Test toggle dublu");
   TodoApp.toggleTodo(todo.id);
   TodoApp.toggleTodo(todo.id);
   const items = TodoApp.getFiltered();
   assertEqual(items[0].completed, false);
 });
 
-test('returnează false pentru id inexistent', () => {
+test("returnează false pentru id inexistent", () => {
   const result = TodoApp.toggleTodo(9999);
   assertEqual(result, false);
 });
 
 // 3. deleteTodo
-console.log('\ndeleteTodo()');
+console.log("\ndeleteTodo()");
 
-test('șterge o sarcină existentă', () => {
-  const todo = TodoApp.addTodo('De șters');
+test("șterge o sarcină existentă", () => {
+  const todo = TodoApp.addTodo("De șters");
   const ok = TodoApp.deleteTodo(todo.id);
   assertEqual(ok, true);
   assertEqual(TodoApp.getFiltered().length, 0);
 });
 
-test('returnează false pentru id inexistent', () => {
+test("returnează false pentru id inexistent", () => {
   const ok = TodoApp.deleteTodo(9999);
   assertEqual(ok, false);
 });
 
 // 4. clearCompleted
-console.log('\nclearCompleted()');
+console.log("\nclearCompleted()");
 
-test('șterge doar sarcinile finalizate', () => {
-  TodoApp.addTodo('Activă');
-  const b = TodoApp.addTodo('Finalizată');
+test("șterge doar sarcinile finalizate", () => {
+  TodoApp.addTodo("Activă");
+  const b = TodoApp.addTodo("Finalizată");
   TodoApp.toggleTodo(b.id);
   const removed = TodoApp.clearCompleted();
   assertEqual(removed, 1);
   assertEqual(TodoApp.getFiltered().length, 1);
-  assertEqual(TodoApp.getFiltered()[0].text, 'Activă');
+  assertEqual(TodoApp.getFiltered()[0].text, "Activă");
 });
 
-test('returnează 0 dacă nu există sarcini finalizate', () => {
-  TodoApp.addTodo('Activă 1');
-  TodoApp.addTodo('Activă 2');
+test("returnează 0 dacă nu există sarcini finalizate", () => {
+  TodoApp.addTodo("Activă 1");
+  TodoApp.addTodo("Activă 2");
   const removed = TodoApp.clearCompleted();
   assertEqual(removed, 0);
 });
 
 // 5. getFiltered
-console.log('\ngetFiltered()');
+console.log("\ngetFiltered()");
 
 test('filtrul "all" returnează toate sarcinile', () => {
-  TodoApp.addTodo('A'); TodoApp.addTodo('B'); TodoApp.addTodo('C');
-  assertEqual(TodoApp.getFiltered('all').length, 3);
+  TodoApp.addTodo("A");
+  TodoApp.addTodo("B");
+  TodoApp.addTodo("C");
+  assertEqual(TodoApp.getFiltered("all").length, 3);
 });
 
 test('filtrul "active" returnează doar sarcinile necompletate', () => {
-  const a = TodoApp.addTodo('Activă');
-  const b = TodoApp.addTodo('Finalizată');
+  const a = TodoApp.addTodo("Activă");
+  const b = TodoApp.addTodo("Finalizată");
   TodoApp.toggleTodo(b.id);
-  const active = TodoApp.getFiltered('active');
+  const active = TodoApp.getFiltered("active");
   assertEqual(active.length, 1);
   assertEqual(active[0].id, a.id);
 });
 
 test('filtrul "completed" returnează doar sarcinile finalizate', () => {
-  const a = TodoApp.addTodo('Activă');
-  const b = TodoApp.addTodo('Finalizată');
+  const a = TodoApp.addTodo("Activă");
+  const b = TodoApp.addTodo("Finalizată");
   TodoApp.toggleTodo(b.id);
-  const completed = TodoApp.getFiltered('completed');
+  const completed = TodoApp.getFiltered("completed");
   assertEqual(completed.length, 1);
   assertEqual(completed[0].id, b.id);
 });
 
 // 6. activeCount
-console.log('\nactiveCount');
+console.log("\nactiveCount");
 
-test('numără corect sarcinile active', () => {
-  TodoApp.addTodo('A'); TodoApp.addTodo('B'); TodoApp.addTodo('C');
+test("numără corect sarcinile active", () => {
+  TodoApp.addTodo("A");
+  TodoApp.addTodo("B");
+  TodoApp.addTodo("C");
   const c = TodoApp.getFiltered()[2];
   TodoApp.toggleTodo(c.id);
   assertEqual(TodoApp.activeCount, 2);
 });
 
+// 7. Edge cases
+console.log("\nEdge cases");
+
+// Test 1 - caractere speciale
+test("acceptă text cu caractere speciale", () => {
+  const todo = TodoApp.addTodo("<script>alert('xss')</script>");
+
+  assert(todo !== null, "Task-ul trebuie creat");
+  assertEqual(todo.text, "<script>alert('xss')</script>");
+  assertEqual(TodoApp.getFiltered().length, 1);
+});
+
+// Test 2 - 100 task-uri consecutive
+test("adaugă 100 de sarcini consecutive", () => {
+  for (let i = 0; i < 100; i++) {
+    TodoApp.addTodo(`Task ${i}`);
+  }
+
+  const todos = TodoApp.getFiltered();
+
+  assertEqual(todos.length, 100);
+
+  // verifică unicitatea ID-urilor
+  const ids = todos.map((t) => t.id);
+  const uniqueIds = new Set(ids);
+
+  assertEqual(uniqueIds.size, 100);
+});
+
+// Test 3 - ștergerea unui element din mijloc
+test("șterge corect un element din mijlocul listei", () => {
+  const t1 = TodoApp.addTodo("Task 1");
+  const t2 = TodoApp.addTodo("Task 2");
+  const t3 = TodoApp.addTodo("Task 3");
+
+  TodoApp.deleteTodo(t2.id);
+
+  const todos = TodoApp.getFiltered();
+
+  assertEqual(todos.length, 2);
+
+  assert(
+    todos.find((t) => t.id === t1.id),
+    "Task 1 trebuie să existe",
+  );
+  assert(
+    todos.find((t) => t.id === t3.id),
+    "Task 3 trebuie să existe",
+  );
+
+  assert(!todos.find((t) => t.id === t2.id), "Task 2 trebuie șters");
+});
+
 // ── Raport final ───────────────────────────────────────────────────────────
-console.log(`\n${'─'.repeat(40)}`);
-console.log(`Total: ${passed + failed} teste | ✅ ${passed} trecute | ❌ ${failed} eșuate`);
-console.log(`${'─'.repeat(40)}\n`);
+console.log(`\n${"─".repeat(40)}`);
+console.log(
+  `Total: ${passed + failed} teste | ✅ ${passed} trecute | ❌ ${failed} eșuate`,
+);
+console.log(`${"─".repeat(40)}\n`);
 
 if (failed > 0) process.exit(1);
