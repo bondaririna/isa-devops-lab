@@ -3,17 +3,17 @@ name: SLI Monitor - Metrici & Observabilitate
 # Rulează automat la fiecare oră și manual (pentru demo în laborator)
 on:
   schedule:
-    - cron: '0 * * * *'   # la fiecare oră fixă (sintaxă cron standard)
-  workflow_dispatch:       # declanșare manuală din interfața GitHub
+    - cron: "0 * * * *" # la fiecare oră fixă (sintaxă cron standard)
+  workflow_dispatch: # declanșare manuală din interfața GitHub
     inputs:
       slo_latency_ms:
-        description: 'Prag SLO latență (ms)'
+        description: "Prag SLO latență (ms)"
         required: false
-        default: '500'
+        default: "500"
       slo_availability:
-        description: 'Prag SLO disponibilitate (%)'
+        description: "Prag SLO disponibilitate (%)"
         required: false
-        default: '99.0'
+        default: "99.0"
 
 jobs:
   measure-sli:
@@ -75,6 +75,22 @@ jobs:
           echo "total_bytes=$TOTAL" >> $GITHUB_OUTPUT
           echo "📦  Dimensiune totală: ${TOTAL} bytes"
 
+      # ── SLI 4: Teste automate ───────────────────────────────────
+      - name: SLI 4 - Rulează testele automate
+        id: tests
+        run: |
+          TEST_OUTPUT=$(node tests/todo.test.js)
+
+          echo "$TEST_OUTPUT"
+
+          if echo "$TEST_OUTPUT" | grep -q "❌ 0 eșuate"; then
+            echo "tests_ok=true" >> $GITHUB_OUTPUT
+            echo "✅  Toate testele au trecut"
+          else
+            echo "tests_ok=false" >> $GITHUB_OUTPUT
+            echo "❌  Unele teste au eșuat"
+          fi
+
       # ── Calculează Error Budget ───────────────────────────────────────
       - name: Calculează Error Budget
         id: budget
@@ -124,6 +140,11 @@ jobs:
             fi
 
             echo "| Dimensiune app  | ${SIZE} bytes | < 50000 bytes | ✅ |"
+            if [ "${{ steps.tests.outputs.tests_ok }}" = "true" ]; then
+              echo "| Teste automate | Toate testele trecute | 100% succes | ✅ |"
+            else
+              echo "| Teste automate | Există teste eșuate | 100% succes | ❌ |"
+            fi
             echo ""
             echo "### Error Budget"
             echo ""
@@ -146,3 +167,7 @@ jobs:
             exit 1
           fi
           echo "✅  Toate SLO-urile critice sunt respectate."
+          if [ "${{ steps.tests.outputs.tests_ok }}" = "false" ]; then
+            echo "❌  EȘEC: Testele automate au picat!"
+            exit 1
+          fi
