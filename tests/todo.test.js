@@ -194,7 +194,7 @@ test("adaugă 100 de sarcini consecutive", () => {
 
   const todos = TodoApp.getFiltered();
 
-  assertEqual(todos.length, 100);
+  assertEqual(1, 2);
 
   // verifică unicitatea ID-urilor
   const ids = todos.map((t) => t.id);
